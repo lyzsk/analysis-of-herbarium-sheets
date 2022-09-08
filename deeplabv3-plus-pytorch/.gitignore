@@ -2,7 +2,6 @@
 map_out/
 herbarium_sheets/
 .temp_miou_out/
-logs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

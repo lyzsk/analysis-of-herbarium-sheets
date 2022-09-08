@@ -229,7 +229,7 @@ if __name__ == "__main__":
     # @see https://github.com/LIVIAETS/boundary-loss
     # @see https://blog.csdn.net/longshaonihaoa/article/details/111824916
     # @see deeplabv3_training.py
-    dice_loss = False
+    dice_loss = True
     # enable/disable focal loss to prevent the imbalance of positive and negative samples
     focal_loss = False
 
