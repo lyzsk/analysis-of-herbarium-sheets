@@ -1,0 +1,5 @@
+Label
+Barcode
+Color Chart
+Scale
+Specimen
