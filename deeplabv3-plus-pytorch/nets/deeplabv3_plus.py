@@ -15,6 +15,7 @@ class MobileNetV2(nn.Module):
         self.features = model.features[:-1]
 
         self.total_idx = len(self.features)
+        # Get the interverted_residual_setting by idx
         self.down_idx = [2, 4, 7, 14]
 
         if downsample_factor == 8:
@@ -48,6 +49,7 @@ class MobileNetV2(nn.Module):
     def forward(self, x):
         low_level_features = self.features[:4](x)
         x = self.features[4:](low_level_features)
+        # 输出两个特征层, one for Encoder, one for Decoder
         return low_level_features, x
 
 
@@ -93,7 +95,7 @@ class ASPP(nn.Module):
         conv3x3_1 = self.branch2(x)
         conv3x3_2 = self.branch3(x)
         conv3x3_3 = self.branch4(x)
-        # 第五个分支，全局平均池化+卷积
+        # 5th branch，global average pooling + convolution
         global_feature = torch.mean(x, 2, True)
         global_feature = torch.mean(global_feature, 3, True)
         global_feature = self.branch5_conv(global_feature)
@@ -101,8 +103,8 @@ class ASPP(nn.Module):
         global_feature = self.branch5_relu(global_feature)
         global_feature = F.interpolate(global_feature, (row, col), None, 'bilinear', True)
 
-        # 将五个分支的内容堆叠起来
-        # 然后1x1卷积整合特征。
+        # Stack the contents of the five branches
+        # Then 1x1 convolution integrates the features
         feature_cat = torch.cat([conv1x1, conv3x3_1, conv3x3_2, conv3x3_3, global_feature], dim=1)
         result = self.conv_cat(feature_cat)
         return result
@@ -112,27 +114,26 @@ class DeepLab(nn.Module):
     def __init__(self, num_classes, backbone="mobilenet", pretrained=True, downsample_factor=16):
         super(DeepLab, self).__init__()
         if backbone == "xception":
-            # 获得两个特征层
-            # 浅层特征    [128,128,256]
-            # 主干部分    [30,30,2048]
+            # get two feature layers
+            # low-level     [128,128,256]
+            # backbone      [30,30,2048]
             self.backbone = xception(downsample_factor=downsample_factor, pretrained=pretrained)
             in_channels = 2048
             low_level_channels = 256
         elif backbone == "mobilenet":
-            # 获得两个特征层
-            # 浅层特征    [128,128,24]
-            # 主干部分    [30,30,320]
+            # get two feature layers
+            # low-level     [128,128,24]
+            # backbone      [30,30,320]
             self.backbone = MobileNetV2(downsample_factor=downsample_factor, pretrained=pretrained)
             in_channels = 320
             low_level_channels = 24
         else:
             raise ValueError('Unsupported backbone - `{}`, Use mobilenet, xception.'.format(backbone))
 
-        # ASPP特征提取模块
-        # 利用不同膨胀率的膨胀卷积进行特征提取
+        # ASPP feature extraction using dilated convolutions with different dilation rates
         self.aspp = ASPP(dim_in=in_channels, dim_out=256, rate=16 // downsample_factor)
 
-        # 浅层特征边
+        # low-level feature edge
         self.shortcut_conv = nn.Sequential(
             nn.Conv2d(low_level_channels, 48, 1),
             nn.BatchNorm2d(48),
@@ -155,15 +156,15 @@ class DeepLab(nn.Module):
 
     def forward(self, x):
         H, W = x.size(2), x.size(3)
-        # 获得两个特征层
-        # low_level_features: 浅层特征-进行卷积处理
-        # x : 主干部分-利用ASPP结构进行加强特征提取
+        # get two feature layers
+        # low_level_features: do convolution
+        # x : backbone(Encoder) enhanced feature extraction using ASPP structure
         low_level_features, x = self.backbone(x)
         x = self.aspp(x)
         low_level_features = self.shortcut_conv(low_level_features)
 
-        # 将加强特征边上采样
-        # 与浅层特征堆叠后利用卷积进行特征提取
+        # enhance feature edge upsampling
+        # feature extraction using convolution after stacking with low-level features
         x = F.interpolate(x, size=(low_level_features.size(2), low_level_features.size(3)), mode='bilinear',
                           align_corners=True)
         x = self.cat_conv(torch.cat((x, low_level_features), dim=1))

@@ -78,7 +78,7 @@ if __name__ == "__main__":
 
     # downsample_factor     downsample factor 8 or 16
     #                       8 means 3 downsample count like theory but need more memory of GPU
-    #                       I use 4 to solve the OOM
+    #                       I use 8 to solve the OOM
     downsample_factor = 16
 
     # size of input image
@@ -231,7 +231,7 @@ if __name__ == "__main__":
     # @see deeplabv3_training.py
     dice_loss = True
     # enable/disable focal loss to prevent the imbalance of positive and negative samples
-    focal_loss = False
+    focal_loss = True
 
     # every class's loss weight，default to be balanced
     cls_weights = np.ones([num_classes], np.float32)
