@@ -43,9 +43,10 @@ if __name__ == "__main__":
     distributed = False
     # sync_bn           是否使用sync_bn，DDP模式多卡可用
     sync_bn = False
-    # fp16              是否使用混合精度训练
-    #                   可减少约一半的显存、需要pytorch1.7.1以上
-    fp16 = False
+    # fp16              Mixed Precision Training    混合精度训练, 减少内存, tf可以直接开, pytorch要1.7.1以上
+    #                   Can reduce about half of the video memory, requires pytorch1.7.1 or above
+    #                   In addition, could reduce 1hr training time on 1000 images datasets
+    fp16 = True
     # num_classes       num of claesses + 1(_background_)
     num_classes = 5
 
@@ -167,6 +168,7 @@ if __name__ == "__main__":
     # and more training is required to jump out of the local optimal solution
     # UnFreeze_Epoch can be in range 120-300
     # Adam相较于SGD收敛的快一些 因此UnFreeze_Epoch理论上可以小一点 但依然推荐更多的Epoch
+    # TODO: 但实际上adam的结果并没有sgd好?
     #
     # batch_size：受到BatchNorm层影响，batch_size最小为2，不能为1。
     # normally, Freeze_batch_size is recommended to be 1-2 times of Unfreeze_batch_size
@@ -194,19 +196,31 @@ if __name__ == "__main__":
     Freeze_Train = True
 
     # Init_lr           maximum learning rate, sgd default learning rate is 0.01
-    #                   for Adam optimizer:  Init_lr=5e-4
-    #                   for SGD optimizer:   Init_lr=7e-3
+    #                   Init_lr=7e-3 (0.007), is recommended by origin deeplab source code
+    #                   @see https://github.com/tensorflow/models/blob/master/research/deeplab/train.py
     # Min_lr            min learning rate is as sgd's 0.01
     Init_lr = 7e-3
     Min_lr = Init_lr * 0.01
 
-    # optimizer_type    adam, sgd
+    # optimizer_type    adam, sgd   其实adam比sgd好
     # momentum          优化器内部使用到的momentum参数
     # weight_decay      weight decay to prevent overfitting
-    optimizer_type = "sgd"
+    # optimizer_type = "sgd"
+    optimizer_type = "adam"
+    # 'learning_power', 0.9, 'The power value used in the poly learning policy.'
+    # @see https://github.com/tensorflow/models/blob/master/research/deeplab/train.py
     momentum = 0.9
-    weight_decay = 1e-4  # using adam will weight_decay bug, weight_decay = 0 when using adm
+    # using adam will have weight_decay bug,
+    # weight_decay = 0 when using adam,
+    # weight_decay = 1e-4 when using sgd
+    # weight_decay = 0.0001 in models/model.py  但是会有bug不知道为啥
+    # @see https://github.com/tensorflow/models/blob/master/research/deeplab/model.py
+    weight_decay = 0
     # lr_decay_type    'step', 'cos'
+    # cos: Cosine learning rate decay   随着epoch增大学习率不断减去一个小的数
+    #                                   学习过程更加平滑
+    # step: Step learning rate decay    让学习率随着训练过程曲线下降
+    # @see https://blog.csdn.net/m0_46204224/article/details/109745740
     lr_decay_type = 'cos'
     # save log every 5 epoch
     save_period = 5
@@ -224,7 +238,7 @@ if __name__ == "__main__":
     # num_classes > 10，batch_size < 10: False
     # Dice Loss is equivalent to investigating from a global perspective. 
     # BCE zooms in pixel by pixel from a microscopic perspective, with complementary angles
-    # TODO: I don't know if I need to enable the dice loss
+    # For herbarium sheets dataset, dice loss + focal loss 的表现更好
     #
     # @see https://github.com/LIVIAETS/boundary-loss
     # @see https://blog.csdn.net/longshaonihaoa/article/details/111824916
@@ -295,13 +309,13 @@ if __name__ == "__main__":
         loss_history = None
 
     # torch 1.2 has no amp, torch > 1.7.1 can use fp16
-    # if fp16:
-    #     from torch.cuda.amp import GradScaler as GradScaler
-    #
-    #     scaler = GradScaler()
-    # else:
-    #     scaler = None
-    scaler = None
+    if fp16:
+        from torch.cuda.amp import GradScaler as GradScaler
+
+        scaler = GradScaler()
+    else:
+        scaler = None
+    # scaler = None
     model_train = model.train()
 
     # 多卡同步Bn
