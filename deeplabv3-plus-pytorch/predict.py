@@ -23,6 +23,7 @@ if __name__ == "__main__":
     # name_classes      should be same as labelme classes
     # IMPORTANT! NEED TO MODIFY HERE!
     count = False
+    # 红, 绿, 黄, 蓝
     name_classes = ["background", "Barcode", "Label", "Color chart", "Scale"]
 
     # video_path            用于指定视频的路径，当video_path=0时表示检测摄像头

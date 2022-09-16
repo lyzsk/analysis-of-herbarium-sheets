@@ -33,9 +33,7 @@ def fit_one_epoch(model_train, model, loss_history, eval_callback, optimizer, ep
                 pngs = pngs.cuda(local_rank)
                 labels = labels.cuda(local_rank)
                 weights = weights.cuda(local_rank)
-        # ----------------------#
-        #   清零梯度
-        # ----------------------#
+        # 清零梯度
         optimizer.zero_grad()
         if not fp16:
             # 前向传播
@@ -51,26 +49,21 @@ def fit_one_epoch(model_train, model, loss_history, eval_callback, optimizer, ep
                 loss = loss + main_dice
 
             with torch.no_grad():
-                # -------------------------------#
-                #   计算f_score
-                # -------------------------------#
+                # 计算f_score
                 _f_score = f_score(outputs, labels)
 
-            # ----------------------#
-            #   反向传播
-            # ----------------------#
-            loss.backward()
-            optimizer.step()
+            # when we call loss.backward(), the whole graph is differentiated w.r.t. the loss,
+            # and all Variables in the graph will have their .grad Variable accumulated with the gradient
+            # @see http://seba1511.net/tutorials/beginner/blitz/neural_networks_tutorial.html
+            # @see https://stackoverflow.com/questions/53975717/pytorch-connection-between-loss-backward-and-optimizer-step
+            loss.backward()  # Back Propagation
+            optimizer.step()  # Gardient Descent
         else:
             from torch.cuda.amp import autocast
             with autocast():
-                # ----------------------#
-                #   前向传播
-                # ----------------------#
+                # 前向传播
                 outputs = model_train(imgs)
-                # ----------------------#
-                #   计算损失
-                # ----------------------#
+                # 计算损失
                 if focal_loss:
                     loss = Focal_Loss(outputs, pngs, weights, num_classes=num_classes)
                 else:
@@ -81,14 +74,11 @@ def fit_one_epoch(model_train, model, loss_history, eval_callback, optimizer, ep
                     loss = loss + main_dice
 
                 with torch.no_grad():
-                    # -------------------------------#
-                    #   计算f_score
-                    # -------------------------------#
+                    # 计算f_score
                     _f_score = f_score(outputs, labels)
 
-            # ----------------------#
-            #   反向传播
-            # ----------------------#
+            # scale 然后 反向传播
+            # 跟非fp有所不同, 在scaler里传参
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
@@ -121,13 +111,9 @@ def fit_one_epoch(model_train, model, loss_history, eval_callback, optimizer, ep
                 labels = labels.cuda(local_rank)
                 weights = weights.cuda(local_rank)
 
-            # ----------------------#
-            #   前向传播
-            # ----------------------#
+            # 前向传播
             outputs = model_train(imgs)
-            # ----------------------#
-            #   计算损失
-            # ----------------------#
+            # 计算损失
             if focal_loss:
                 loss = Focal_Loss(outputs, pngs, weights, num_classes=num_classes)
             else:
@@ -136,9 +122,7 @@ def fit_one_epoch(model_train, model, loss_history, eval_callback, optimizer, ep
             if dice_loss:
                 main_dice = Dice_loss(outputs, labels)
                 loss = loss + main_dice
-            # -------------------------------#
-            #   计算f_score
-            # -------------------------------#
+            # 计算f_score
             _f_score = f_score(outputs, labels)
 
             val_loss += loss.item()
@@ -158,12 +142,10 @@ def fit_one_epoch(model_train, model, loss_history, eval_callback, optimizer, ep
         print('Epoch:' + str(epoch + 1) + '/' + str(Epoch))
         print('Total Loss: %.3f || Val Loss: %.3f ' % (total_loss / epoch_step, val_loss / epoch_step_val))
 
-        # -----------------------------------------------#
-        #   保存权值
-        # -----------------------------------------------#
+        # 保存权值
         if (epoch + 1) % save_period == 0 or epoch + 1 == Epoch:
             torch.save(model.state_dict(), os.path.join(save_dir, 'ep%03d-loss%.3f-val_loss%.3f.pth' % (
-            epoch + 1, total_loss / epoch_step, val_loss / epoch_step_val)))
+                epoch + 1, total_loss / epoch_step, val_loss / epoch_step_val)))
 
         if len(loss_history.val_loss) <= 1 or (val_loss / epoch_step_val) <= min(loss_history.val_loss):
             print('Save best model to best_epoch_weights.pth')
