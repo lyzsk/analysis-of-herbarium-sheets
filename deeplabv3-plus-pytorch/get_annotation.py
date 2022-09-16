@@ -70,8 +70,12 @@ if __name__ == "__main__":
 
         png = np.array(Image.open(png_file_name), np.uint8)
         if len(np.shape(png)) > 2:
-            print("标签图片%s的shape为%s，不属于灰度图或者八位彩图，请仔细检查数据集格式。" % (name, str(np.shape(png))))
-            print("标签图片需要为灰度图或者八位彩图，标签的每个像素点的值就是这个像素点所属的种类。" % (name, str(np.shape(png))))
+            print(
+                "标签图片%s的shape为%s，"
+                "It is not grayscale or 8-bit depth color image, please check the data set format carefully" % (
+                    name, str(np.shape(png))))
+            print("Require grayscale image or 8-bit depth color image，标签的每个像素点的值就是这个像素点所属的种类。" % (
+                name, str(np.shape(png))))
 
         classes_nums += np.bincount(np.reshape(png, [-1]), minlength=256)
 
