@@ -1,5 +1,4 @@
 # ignore map, miou, datasets
-map_out/
 herbarium_sheets/
 .temp_miou_out/
 
