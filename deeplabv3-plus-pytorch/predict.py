@@ -6,6 +6,9 @@ from PIL import Image
 
 from deeplab import DeeplabV3
 
+# If you want to predict greyscale images:
+#       1. 在get_random_data里面将Image.open后的结果转换成RGB
+#       2. 在predict里也修改对应参数, 但是原本设计的就是自动转RGB, 所以很麻烦:)
 if __name__ == "__main__":
     # change colors in deeplab.py __init__ class
     deeplab = DeeplabV3()
