@@ -46,6 +46,9 @@ if __name__ == "__main__":
     # fp16              Mixed Precision Training    混合精度训练, 减少内存, tf可以直接开, pytorch要1.7.1以上
     #                   Can reduce about half of the video memory, requires pytorch1.7.1 or above
     #                   In addition, could reduce 1hr training time on 1000 images datasets
+    # 重要提示！ IMPORTANT!
+    # 不知道为什么, 开启fp16后 不仅减少了训练时间, 还提高了miou等数值
+    # idk why, after enable fp16, less training time, higher miou.
     fp16 = True
     # num_classes       num of claesses + 1(_background_)
     num_classes = 5
@@ -168,7 +171,6 @@ if __name__ == "__main__":
     # and more training is required to jump out of the local optimal solution
     # UnFreeze_Epoch can be in range 120-300
     # Adam相较于SGD收敛的快一些 因此UnFreeze_Epoch理论上可以小一点 但依然推荐更多的Epoch
-    # TODO: 但实际上adam的结果并没有sgd好?
     #
     # batch_size：受到BatchNorm层影响，batch_size最小为2，不能为1。
     # normally, Freeze_batch_size is recommended to be 1-2 times of Unfreeze_batch_size

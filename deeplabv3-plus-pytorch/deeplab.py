@@ -87,32 +87,36 @@ class DeeplabV3(object):
                 self.net = self.net.cuda()
 
     def detect_image(self, image, count=False, name_classes=None):
-        # convert the image to an RGB image to prevent an error in the prediction of grayscale images
-        # only support prediction for RGB images, others will change into RGB
+        # convert into RGB png, because:
+        #   1. only png has the classes of each pixel.
+        #   2. we use RGB color the assign labels.
+        # @see utils.py
         image = cvtColor(image)
-        # 对输入图像进行一个备份，后面用于绘图
+        # copy image, make a backup
         old_img = copy.deepcopy(image)
+        # get width, height
         orininal_h = np.array(image).shape[0]
         orininal_w = np.array(image).shape[1]
-        # add gray bars to the image to achieve undistorted resize
+        # add gray bars to the image to achieve undistorted resize (letterbox image)
         # 也可以直接resize进行识别
         image_data, nw, nh = resize_image(image, (self.input_shape[1], self.input_shape[0]))
-        # 添加上batch_size维度
+        # normalization + 添加上batch_size维度, put the channel at the first dimension
+        # This is the Pytorch requirement
         image_data = np.expand_dims(np.transpose(preprocess_input(np.array(image_data, np.float32)), (2, 0, 1)), 0)
 
+        # transfer the image_data into the Pytorch format
         with torch.no_grad():
             images = torch.from_numpy(image_data)
             if self.cuda:
                 images = images.cuda()
 
-            # put images into nets
+            # put images into nets to predict
             pr = self.net(images)[0]
 
-            # take out the class of each pixel
+            # use torch.nn.functional.softmax, get the class of each pixel
             pr = F.softmax(pr.permute(1, 2, 0), dim=-1).cpu().numpy()
 
             # crop the gray bars added before
-            # --------------------------------------#
             pr = pr[int((self.input_shape[0] - nh) // 2): int((self.input_shape[0] - nh) // 2 + nh), \
                  int((self.input_shape[1] - nw) // 2): int((self.input_shape[1] - nw) // 2 + nw)]
 
@@ -143,10 +147,10 @@ class DeeplabV3(object):
             #     seg_img[:, :, 0] += ((pr[:, :] == c ) * self.colors[c][0]).astype('uint8')
             #     seg_img[:, :, 1] += ((pr[:, :] == c ) * self.colors[c][1]).astype('uint8')
             #     seg_img[:, :, 2] += ((pr[:, :] == c ) * self.colors[c][2]).astype('uint8')
+            # assign class label with color into the objects
             seg_img = np.reshape(np.array(self.colors, np.uint8)[np.reshape(pr, [-1])], [orininal_h, orininal_w, -1])
 
-            # 将新图片转换成Image的形式
-
+            # 将新图片转换成Image的形式, resize from the 512,512 into original size
             image = Image.fromarray(np.uint8(seg_img))
 
             # 将新图与原图及进行混合

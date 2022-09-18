@@ -1,0 +1,151 @@
+Folder PATH listing for volume Windows
+Volume serial number is 02D4-02A1
+C:.
+³   .gitignore
+³   convert_labelled.py
+³   deeplab.py
+³   get_annotation.py
+³   get_miou.py
+³   labelme_to_deeplab.py
+³   predict.py
+³   README.CN.md
+³   README.md
+³   requirements.txt
+³   train.py
+³   tree.txt
+³   
+ÃÄÄÄ.idea
+³   ³   .gitignore
+³   ³   deeplabv3-plus-pytorch.iml
+³   ³   misc.xml
+³   ³   modules.xml
+³   ³   saveactions_settings.xml
+³   ³   vcs.xml
+³   ³   workspace.xml
+³   ³   
+³   ÀÄÄÄinspectionProfiles
+³           profiles_settings.xml
+³           Project_Default.xml
+³           
+ÃÄÄÄdatasets
+³   ÃÄÄÄbefore
+³   ³       RM0008192.jpg
+³   ³       RM0008192.json
+³   ³       
+³   ÃÄÄÄJPEGImages
+³   ³       RM0008192.jpg
+³   ³       
+³   ÀÄÄÄSegmentationClass
+³           RM0008192.png
+³           
+ÃÄÄÄherbarium_sheets
+³   ÀÄÄÄwyoming_combine_origin
+³       ÃÄÄÄImageSets
+³       ³   ÀÄÄÄSegmentation
+³       ³           test.txt
+³       ³           train.txt
+³       ³           trainval.txt
+³       ³           val.txt
+³       ³           
+³       ÃÄÄÄJPEGImages
+³       ³       AMD.100007.JPG
+³       ³       
+³       ÀÄÄÄSegmentationClass
+³               AMD.100007.png
+³               
+ÃÄÄÄimg
+³       RM0008156.jpg
+³       
+ÃÄÄÄimg_out
+³       RM0008156.jpg
+³       
+ÃÄÄÄlogs
+³   ³   best_epoch_weights.pth
+³   ³   ep005-loss0.524-val_loss0.369.pth
+³   ³   ep010-loss0.405-val_loss0.269.pth
+³   ³   ep015-loss0.352-val_loss0.259.pth
+³   ³   ep020-loss0.313-val_loss0.224.pth
+³   ³   ep025-loss0.280-val_loss0.187.pth
+³   ³   ep030-loss0.278-val_loss0.184.pth
+³   ³   ep035-loss0.276-val_loss0.178.pth
+³   ³   ep040-loss0.226-val_loss0.161.pth
+³   ³   ep045-loss0.237-val_loss0.167.pth
+³   ³   ep050-loss0.194-val_loss0.180.pth
+³   ³   ep055-loss0.383-val_loss0.234.pth
+³   ³   ep060-loss0.276-val_loss0.173.pth
+³   ³   ep065-loss0.263-val_loss0.174.pth
+³   ³   ep070-loss0.230-val_loss0.148.pth
+³   ³   ep075-loss0.182-val_loss0.140.pth
+³   ³   ep080-loss0.182-val_loss0.166.pth
+³   ³   ep085-loss0.171-val_loss0.130.pth
+³   ³   ep090-loss0.153-val_loss0.151.pth
+³   ³   ep095-loss0.167-val_loss0.136.pth
+³   ³   ep100-loss0.180-val_loss0.148.pth
+³   ³   last_epoch_weights.pth
+³   ³   
+³   ÀÄÄÄloss_2022_09_15_09_05_28
+³           epoch_loss.png
+³           epoch_loss.txt
+³           epoch_miou.png
+³           epoch_miou.txt
+³           epoch_val_loss.txt
+³           events.out.tfevents.1663229128.LAPTOP-DKANVJKT.15032.0
+³           
+ÃÄÄÄmiou_out
+³   ³   confusion_matrix.csv
+³   ³   mIoU.png
+³   ³   mPA.png
+³   ³   Precision.png
+³   ³   Recall.png
+³   ³   
+³   ÀÄÄÄdetection-results
+³           AMD.100040.png
+³           
+ÃÄÄÄmodel_data
+³       deeplab_mobilenetv2.pth
+³       
+ÃÄÄÄnets
+³   ³   deeplabv3_plus.py
+³   ³   deeplabv3_training.py
+³   ³   mobilenetv2.py
+³   ³   xception.py
+³   ³   __init__.py
+³   ³   
+³   ÀÄÄÄ__pycache__
+³           deeplabv3_plus.cpython-36.pyc
+³           deeplabv3_plus.cpython-39.pyc
+³           deeplabv3_training.cpython-36.pyc
+³           deeplabv3_training.cpython-39.pyc
+³           mobilenetv2.cpython-36.pyc
+³           mobilenetv2.cpython-39.pyc
+³           xception.cpython-36.pyc
+³           xception.cpython-39.pyc
+³           __init__.cpython-36.pyc
+³           __init__.cpython-39.pyc
+³           
+ÃÄÄÄutils
+³   ³   callbacks.py
+³   ³   dataloader.py
+³   ³   utils.py
+³   ³   utils_fit.py
+³   ³   utils_metrics.py
+³   ³   __init__.py
+³   ³   
+³   ÀÄÄÄ__pycache__
+³           callbacks.cpython-36.pyc
+³           callbacks.cpython-39.pyc
+³           dataloader.cpython-36.pyc
+³           dataloader.cpython-39.pyc
+³           utils.cpython-36.pyc
+³           utils.cpython-39.pyc
+³           utils_fit.cpython-36.pyc
+³           utils_fit.cpython-39.pyc
+³           utils_metrics.cpython-36.pyc
+³           utils_metrics.cpython-39.pyc
+³           __init__.cpython-36.pyc
+³           __init__.cpython-39.pyc
+³           
+ÀÄÄÄ__pycache__
+        deeplab.cpython-36.pyc
+        deeplab.cpython-39.pyc
+        

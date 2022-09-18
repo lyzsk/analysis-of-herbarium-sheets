@@ -71,6 +71,7 @@ class DeeplabDataset(Dataset):
             return new_image, new_label
 
         # 对图像进行缩放并且进行长和宽的扭曲
+        # random resize
         new_ar = iw / ih * self.rand(1 - jitter, 1 + jitter) / self.rand(1 - jitter, 1 + jitter)
         scale = self.rand(0.25, 2)
         if new_ar < 1:
@@ -83,12 +84,14 @@ class DeeplabDataset(Dataset):
         label = label.resize((nw, nh), Image.NEAREST)
 
         # 翻转图像
+        # random flip
         flip = self.rand() < .5
         if flip:
             image = image.transpose(Image.FLIP_LEFT_RIGHT)
             label = label.transpose(Image.FLIP_LEFT_RIGHT)
 
         # 将图像多余的部分加上灰条
+        # add grey bars to the extra parts of the images
         dx = int(self.rand(0, w - nw))
         dy = int(self.rand(0, h - nh))
         new_image = Image.new('RGB', (w, h), (128, 128, 128))
@@ -101,11 +104,13 @@ class DeeplabDataset(Dataset):
         image_data = np.array(image, np.uint8)
 
         # 高斯模糊
+        # random blur
         blur = self.rand() < 0.25
         if blur:
             image_data = cv2.GaussianBlur(image_data, (5, 5), 0)
 
         # 旋转
+        # random rotate
         rotate = self.rand() < 0.25
         if rotate:
             center = (w // 2, h // 2)
@@ -116,6 +121,7 @@ class DeeplabDataset(Dataset):
 
         # 对图像进行色域变换
         # 计算色域变换的参数
+        # random color gamut transformation
         r = np.random.uniform(-1, 1, 3) * [hue, sat, val] + 1
         # 将图像转到HSV上
         hue, sat, val = cv2.split(cv2.cvtColor(image_data, cv2.COLOR_RGB2HSV))
