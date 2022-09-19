@@ -27,40 +27,28 @@ class InvertedResidual(nn.Module):
 
         hidden_dim = round(inp * expand_ratio)
         self.use_res_connect = self.stride == 1 and inp == oup
-        #----------------------------------------------------#
         #   利用1x1卷积根据输入进来的通道数进行通道数上升
-        #----------------------------------------------------#
         if expand_ratio == 1:
             self.conv = nn.Sequential(
-                #----------------------------------------------------#
-                #   利用深度可分离卷积进行特征提取
-                #----------------------------------------------------#
+                # perform 3x3 layer-by-layer convolution for feature extraction across feature points
                 nn.Conv2d(hidden_dim, hidden_dim, 3, stride, 1, groups=hidden_dim, bias=False),
                 BatchNorm2d(hidden_dim),
                 nn.ReLU6(inplace=True),
-                #----------------------------------------------------#
-                #   利用1x1的卷积进行通道数的下降
-                #----------------------------------------------------#
+                # use 1x1 convolution to adjust the number of channels
                 nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
                 BatchNorm2d(oup),
             )
         else:
             self.conv = nn.Sequential(
-                #----------------------------------------------------#
-                #   利用1x1卷积根据输入进来的通道数进行通道数上升
-                #----------------------------------------------------#
+                # use se 1x1 convolution to increase the number of channels
                 nn.Conv2d(inp, hidden_dim, 1, 1, 0, bias=False),
                 BatchNorm2d(hidden_dim),
                 nn.ReLU6(inplace=True),
-                #----------------------------------------------------#
-                #   利用深度可分离卷积进行特征提取
-                #----------------------------------------------------#
+                # perform 3x3 layer-by-layer convolution for feature extraction across feature points
                 nn.Conv2d(hidden_dim, hidden_dim, 3, stride, 1, groups=hidden_dim, bias=False),
                 BatchNorm2d(hidden_dim),
                 nn.ReLU6(inplace=True),
-                #----------------------------------------------------#
-                #   利用1x1的卷积进行通道数的下降
-                #----------------------------------------------------#
+                # use 1x1 convolution to adjust the number of channels
                 nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
                 BatchNorm2d(oup),
             )
@@ -95,13 +83,13 @@ class MobileNetV2(nn.Module):
             # 15,15,160 -> 15,15,320
             [6, 320, 1, 1],
         ]
-        
+
         assert input_size % 32 == 0
         # 473,473,3 -> 237,237,32
         input_channel = int(input_channel * width_mult)
         self.last_channel = int(last_channel * width_mult) if width_mult > 1.0 else last_channel
         self.features = [conv_bn(3, input_channel, 2)]
-        
+
         # 根据上述列表进行循环，构建mobilenetv2的结构
         for t, c, n, s in interverted_residual_setting:
             output_channel = int(c * width_mult)
@@ -111,7 +99,7 @@ class MobileNetV2(nn.Module):
                 else:
                     self.features.append(block(input_channel, output_channel, 1, expand_ratio=t))
                 input_channel = output_channel
-                
+
         # mobilenetv2结构的收尾工作
         self.features.append(conv_1x1_bn(input_channel, self.last_channel))
         self.features = nn.Sequential(*self.features)
@@ -150,5 +138,7 @@ class MobileNetV2(nn.Module):
 def mobilenetv2(pretrained=False, **kwargs):
     model = MobileNetV2(n_class=1000, **kwargs)
     if pretrained:
-        model.load_state_dict(load_state_dict_from_url('https://github.com/bubbliiiing/pspnet-pytorch/releases/download/v1.0/mobilenet_v2.pth.tar', "./model_data"), strict=False)
+        model.load_state_dict(
+            load_state_dict_from_url('https://download.pytorch.org/models/mobilenet_v2-b0353104.pth', "./model_data"),
+            strict=False)
     return model

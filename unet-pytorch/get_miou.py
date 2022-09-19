@@ -8,33 +8,22 @@ from utils.utils_metrics import compute_mIoU, show_results
 
 '''
 进行指标评估需要注意以下几点：
-1、该文件生成的图为灰度图，因为值比较小，按照JPG形式的图看是没有显示效果的，所以看到近似全黑的图是正常的。
+1、该文件生成的图为灰度图，因为值比较小，按照PNG形式的图看是没有显示效果的，所以看到近似全黑的图是正常的。
 2、该文件计算的是验证集的miou，当前该库将测试集当作验证集使用，不单独划分测试集
-3、仅有按照VOC格式数据训练的模型可以利用这个文件进行miou的计算。
 '''
 if __name__ == "__main__":
-    # ---------------------------------------------------------------------------#
-    #   miou_mode用于指定该文件运行时计算的内容
-    #   miou_mode为0代表整个miou计算流程，包括获得预测结果、计算miou。
-    #   miou_mode为1代表仅仅获得预测结果。
-    #   miou_mode为2代表仅仅计算miou。
-    # ---------------------------------------------------------------------------#
+    # miou_mode用于指定该文件运行时计算的内容
+    # miou_mode为0代表整个miou计算流程，包括获得预测结果、计算miou。
+    # miou_mode为1代表仅仅获得预测结果。
+    # miou_mode为2代表仅仅计算miou。
     miou_mode = 0
-    # ------------------------------#
-    #   分类个数+1、如2+1
-    # ------------------------------#
+
+    # 分类个数+1、如2+1
     num_classes = 5
-    # --------------------------------------------#
-    #   区分的种类，和json_to_dataset里面的一样
-    # --------------------------------------------#
-    # name_classes = ["background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow",
-    #                 "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train",
-    #                 "tvmonitor"]
+    # 区分的种类，和json_to_dataset里面的一样
     name_classes = ["background", "Barcode", "Label", "Color chart", "Scale"]
-    # -------------------------------------------------------#
-    #   指向VOC数据集所在的文件夹
-    #   默认指向根目录下的VOC数据集
-    # -------------------------------------------------------#
+
+    # dir path of the training dataset root
     Herbarium_path = 'herbarium_sheets'
 
     image_ids = open(os.path.join(Herbarium_path, "wyoming_combine_origin/ImageSets/Segmentation/val.txt"),

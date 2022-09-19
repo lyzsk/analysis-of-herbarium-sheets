@@ -40,20 +40,16 @@ if __name__ == "__main__":
 
     # 32的倍数 416,416  640, 640
     input_shape = [416, 416]
-    # ------------------------------------------------------#
     #   backbone        cspdarknet（默认）
     #                   convnext_tiny
     #                   convnext_small
     #                   swin_transfomer_tiny
-    # ------------------------------------------------------#
     backbone = 'cspdarknet'
 
     pretrained = False
     # pretrained = True
-    # ------------------------------------------------------#
     #   phi             所使用的YoloV5的版本。s、m、l、x
     #                   在除cspdarknet的其它主干中仅影响panet的大小
-    # ------------------------------------------------------#
     phi = 's'
 
     mosaic = True
@@ -68,7 +64,6 @@ if __name__ == "__main__":
     Init_Epoch = 0
     Freeze_Epoch = 50
     Freeze_batch_size = 16
-    # ------------------------------------------------------------------#
     #   解冻阶段训练参数
     #   此时模型的主干不被冻结了，特征提取网络会发生改变
     #   占用的显存较大，网络所有的参数都会发生改变
@@ -76,7 +71,6 @@ if __name__ == "__main__":
     #                           SGD需要更长的时间收敛，因此设置较大的UnFreeze_Epoch
     #                           Adam可以使用相对较小的UnFreeze_Epoch
     #   Unfreeze_batch_size     模型在解冻后的batch_size
-    # ------------------------------------------------------------------#
     UnFreeze_Epoch = 300
     Unfreeze_batch_size = 8
 
@@ -154,13 +148,9 @@ if __name__ == "__main__":
             print("\nFail To Load Key:", str(no_load_key)[:500], "……\nFail To Load Key num:", len(no_load_key))
             print("\n\033[1;33;44m温馨提示，head部分没有载入是正常现象，Backbone部分没有载入是错误的。\033[0m")
 
-    # ----------------------#
     #   获得损失函数
-    # ----------------------#
     yolo_loss = YOLOLoss(anchors, num_classes, input_shape, Cuda, anchors_mask, label_smoothing)
-    # ----------------------#
     #   记录Loss
-    # ----------------------#
     if local_rank == 0:
         time_str = datetime.datetime.strftime(datetime.datetime.now(), '%Y_%m_%d_%H_%M_%S')
         log_dir = os.path.join(save_dir, "loss_" + str(time_str))
@@ -168,10 +158,8 @@ if __name__ == "__main__":
     else:
         loss_history = None
 
-    # ------------------------------------------------------------------#
     #   torch 1.2不支持amp，建议使用torch 1.7.1及以上正确使用fp16
     #   因此torch1.2这里显示"could not be resolve"
-    # ------------------------------------------------------------------#
     if fp16:
         from torch.cuda.amp import GradScaler as GradScaler
 
@@ -180,9 +168,7 @@ if __name__ == "__main__":
         scaler = None
 
     model_train = model.train()
-    # ----------------------------#
     #   多卡同步Bn
-    # ----------------------------#
     if sync_bn and ngpus_per_node > 1 and distributed:
         model_train = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model_train)
     elif sync_bn:
@@ -190,9 +176,7 @@ if __name__ == "__main__":
 
     if Cuda:
         if distributed:
-            # ----------------------------#
             #   多卡平行运行
-            # ----------------------------#
             model_train = model_train.cuda(local_rank)
             model_train = torch.nn.parallel.DistributedDataParallel(model_train, device_ids=[local_rank],
                                                                     find_unused_parameters=True)
@@ -201,14 +185,10 @@ if __name__ == "__main__":
             cudnn.benchmark = True
             model_train = model_train.cuda()
 
-    # ----------------------------#
     #   权值平滑
-    # ----------------------------#
     ema = ModelEMA(model_train)
 
-    # ---------------------------#
     #   读取数据集对应的txt
-    # ---------------------------#
     with open(train_annotation_path, encoding='utf-8') as f:
         train_lines = f.readlines()
     with open(val_annotation_path, encoding='utf-8') as f:
@@ -226,12 +206,10 @@ if __name__ == "__main__":
             lr_decay_type=lr_decay_type, \
             save_period=save_period, save_dir=save_dir, num_workers=num_workers, num_train=num_train, num_val=num_val
         )
-        # ---------------------------------------------------------#
         #   总训练世代指的是遍历全部数据的总次数
         #   总训练步长指的是梯度下降的总次数 
         #   每个训练世代包含若干训练步长，每个训练步长进行一次梯度下降。
         #   此处仅建议最低训练世代，上不封顶，计算时只考虑了解冻部分
-        # ----------------------------------------------------------#
         wanted_step = 5e4 if optimizer_type == "sgd" else 1.5e4
         total_step = num_train // Unfreeze_batch_size * UnFreeze_Epoch
         if total_step <= wanted_step:
@@ -244,40 +222,30 @@ if __name__ == "__main__":
             print("\033[1;33;44m[Warning] 由于总训练步长为%d，小于建议总步长%d，建议设置总世代为%d。\033[0m" % (
                 total_step, wanted_step, wanted_epoch))
 
-    # ------------------------------------------------------#
     #   主干特征提取网络特征通用，冻结训练可以加快训练速度
     #   也可以在训练初期防止权值被破坏。
     #   Init_Epoch为起始世代
     #   Freeze_Epoch为冻结训练的世代
     #   UnFreeze_Epoch总训练世代
     #   提示OOM或者显存不足请调小Batch_size
-    # ------------------------------------------------------#
     if True:
         UnFreeze_flag = False
-        # ------------------------------------#
         #   冻结一定部分训练
-        # ------------------------------------#
         if Freeze_Train:
             for param in model.backbone.parameters():
                 param.requires_grad = False
 
-        # -------------------------------------------------------------------#
         #   如果不冻结训练的话，直接设置batch_size为Unfreeze_batch_size
-        # -------------------------------------------------------------------#
         batch_size = Freeze_batch_size if Freeze_Train else Unfreeze_batch_size
 
-        # -------------------------------------------------------------------#
         #   判断当前batch_size，自适应调整学习率
-        # -------------------------------------------------------------------#
         nbs = 64
         lr_limit_max = 1e-3 if optimizer_type == 'adam' else 5e-2
         lr_limit_min = 3e-4 if optimizer_type == 'adam' else 5e-4
         Init_lr_fit = min(max(batch_size / nbs * Init_lr, lr_limit_min), lr_limit_max)
         Min_lr_fit = min(max(batch_size / nbs * Min_lr, lr_limit_min * 1e-2), lr_limit_max * 1e-2)
 
-        # ---------------------------------------#
         #   根据optimizer_type选择优化器
-        # ---------------------------------------#
         pg0, pg1, pg2 = [], [], []
         for k, v in model.named_modules():
             if hasattr(v, "bias") and isinstance(v.bias, nn.Parameter):
@@ -293,14 +261,10 @@ if __name__ == "__main__":
         optimizer.add_param_group({"params": pg1, "weight_decay": weight_decay})
         optimizer.add_param_group({"params": pg2})
 
-        # ---------------------------------------#
         #   获得学习率下降的公式
-        # ---------------------------------------#
         lr_scheduler_func = get_lr_scheduler(lr_decay_type, Init_lr_fit, Min_lr_fit, UnFreeze_Epoch)
 
-        # ---------------------------------------#
         #   判断每一个世代的长度
-        # ---------------------------------------#
         epoch_step = num_train // batch_size
         epoch_step_val = num_val // batch_size
 
@@ -310,9 +274,7 @@ if __name__ == "__main__":
         if ema:
             ema.updates = epoch_step * Init_Epoch
 
-        # ---------------------------------------#
-        #   构建数据集加载器。
-        # ---------------------------------------#
+        #   构建数据集加载器
         train_dataset = YoloDataset(train_lines, input_shape, num_classes, anchors, anchors_mask,
                                     epoch_length=UnFreeze_Epoch, \
                                     mosaic=mosaic, mixup=mixup, mosaic_prob=mosaic_prob, mixup_prob=mixup_prob,
@@ -339,9 +301,7 @@ if __name__ == "__main__":
                              pin_memory=True,
                              drop_last=True, collate_fn=yolo_dataset_collate, sampler=val_sampler)
 
-        # ----------------------#
         #   记录eval的map曲线
-        # ----------------------#
         if local_rank == 0:
             eval_callback = EvalCallback(model, input_shape, anchors, anchors_mask, class_names, num_classes, val_lines,
                                          log_dir, Cuda, \
@@ -349,28 +309,20 @@ if __name__ == "__main__":
         else:
             eval_callback = None
 
-        # ---------------------------------------#
         #   开始模型训练
-        # ---------------------------------------#
         for epoch in range(Init_Epoch, UnFreeze_Epoch):
-            # ---------------------------------------#
             #   如果模型有冻结学习部分
             #   则解冻，并设置参数
-            # ---------------------------------------#
             if epoch >= Freeze_Epoch and not UnFreeze_flag and Freeze_Train:
                 batch_size = Unfreeze_batch_size
 
-                # -------------------------------------------------------------------#
                 #   判断当前batch_size，自适应调整学习率
-                # -------------------------------------------------------------------#
                 nbs = 64
                 lr_limit_max = 1e-3 if optimizer_type == 'adam' else 5e-2
                 lr_limit_min = 3e-4 if optimizer_type == 'adam' else 5e-4
                 Init_lr_fit = min(max(batch_size / nbs * Init_lr, lr_limit_min), lr_limit_max)
                 Min_lr_fit = min(max(batch_size / nbs * Min_lr, lr_limit_min * 1e-2), lr_limit_max * 1e-2)
-                # ---------------------------------------#
                 #   获得学习率下降的公式
-                # ---------------------------------------#
                 lr_scheduler_func = get_lr_scheduler(lr_decay_type, Init_lr_fit, Min_lr_fit, UnFreeze_Epoch)
 
                 for param in model.backbone.parameters():

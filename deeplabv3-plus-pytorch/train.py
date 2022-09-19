@@ -287,6 +287,7 @@ if __name__ == "__main__":
         if local_rank == 0:
             print('Load weights {}.'.format(model_path))
 
+        # 根据预训练权重的Key和模型的Key进行加载
         model_dict = model.state_dict()
         pretrained_dict = torch.load(model_path, map_location=device)
         load_key, no_load_key, temp_dict = [], [], {}

@@ -2,44 +2,42 @@ import numpy as np
 from PIL import Image
 
 
-#---------------------------------------------------------#
-#   将图像转换成RGB图像，防止灰度图在预测时报错。
-#   代码仅仅支持RGB图像的预测，所有其它类型的图像都会转化成RGB
-#---------------------------------------------------------#
+# convert the image to an RGB image to prevent an error in the prediction of grayscale images
+# only support prediction for RGB images, others will change into RGB
 def cvtColor(image):
-    if len(np.shape(image)) == 3 and np.shape(image)[-2] == 3:
-        return image 
+    if len(np.shape(image)) == 3 and np.shape(image)[2] == 3:
+        return image
     else:
         image = image.convert('RGB')
-        return image 
+        return image
 
-#---------------------------------------------------#
-#   对输入图像进行resize
-#---------------------------------------------------#
+
+# resize input image
 def resize_image(image, size):
-    iw, ih  = image.size
-    w, h    = size
+    iw, ih = image.size
+    w, h = size
 
-    scale   = min(w/iw, h/ih)
-    nw      = int(iw*scale)
-    nh      = int(ih*scale)
+    scale = min(w / iw, h / ih)
+    nw = int(iw * scale)
+    nh = int(ih * scale)
 
-    image   = image.resize((nw,nh), Image.BICUBIC)
-    new_image = Image.new('RGB', size, (128,128,128))
-    new_image.paste(image, ((w-nw)//2, (h-nh)//2))
+    image = image.resize((nw, nh), Image.BICUBIC)
+    new_image = Image.new('RGB', size, (128, 128, 128))
+    new_image.paste(image, ((w - nw) // 2, (h - nh) // 2))
 
     return new_image, nw, nh
-    
-#---------------------------------------------------#
-#   获得学习率
-#---------------------------------------------------#
+
+
+# get learning rate
 def get_lr(optimizer):
     for param_group in optimizer.param_groups:
         return param_group['lr']
 
+
 def preprocess_input(image):
     image /= 255.0
     return image
+
 
 def show_config(**kwargs):
     print('Configurations:')
@@ -50,16 +48,17 @@ def show_config(**kwargs):
         print('|%25s | %40s|' % (str(key), str(value)))
     print('-' * 70)
 
+
 def download_weights(backbone, model_dir="./model_data"):
     import os
     from torch.hub import load_state_dict_from_url
-    
+
     download_urls = {
-        'mobilenet' : 'https://github.com/bubbliiiing/pspnet-pytorch/releases/download/v1.0/mobilenet_v2.pth.tar',
-        'resnet50'  : 'https://github.com/bubbliiiing/pspnet-pytorch/releases/download/v1.0/resnet50s-a75c83cf.pth'
+        'mobilenet': 'https://github.com/d-li14/mobilenetv2.pytorch/blob/master/pretrained/mobilenetv2_1.0-0c6065bc.pth',
+        'resnet50': 'https://github.com/bubbliiiing/pspnet-pytorch/releases/download/v1.0/resnet50s-a75c83cf.pth'
     }
     url = download_urls[backbone]
-    
+
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
     load_state_dict_from_url(url, model_dir)
