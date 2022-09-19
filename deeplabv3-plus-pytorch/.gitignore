@@ -1,6 +1,5 @@
-# ignore map, miou, datasets
+# ignore herbarium_sheets
 herbarium_sheets/
-.temp_miou_out/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

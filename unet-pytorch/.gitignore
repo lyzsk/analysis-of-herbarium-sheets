@@ -1,7 +1,5 @@
-# ignore map, miou, datasets
-map_out/
+# ignore herbarium_sheets/ model_data/unet_resnet_voc.pth
 herbarium_sheets/
-.temp_miou_out/
 model_data/unet_resnet_voc.pth
 
 # Byte-compiled / optimized / DLL files
