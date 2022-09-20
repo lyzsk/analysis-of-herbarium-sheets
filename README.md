@@ -6,165 +6,331 @@
 
 # About The Project
 
-This project is to train semantic segmentation with supervised learning (Deeplabv3) and semi-supervised learning (NaturalHistoryMeuseum(NHM) semantic segmentation) for herbarium sheets and microscopy slides.
+This project is to train semantic segmentation with supervised learning (Deeplabv3+, U-Net, PSPNet) and semi-supervised learning (NaturalHistoryMeuseum(NHM) semantic segmentation) for herbarium sheets and microscopy slides. And perform one-stage supervised object detection(YOLOv5) to find the mistakes on classification.
+
+> **_If you like this project or it helps you in some way, don't forget to star._** :star:
 
 Training datasets are provided by: NMWHS, MNHNS, MIXSETHS.
 
 -   The training datasets can be access here: [Download Link](https://zenodo.org/record/4448186)
--   In order to get more ideal result, I trained combination of original training datasets(2000 images) with small part of Wyoming's datasets(200 images) by using [labelme](https://anaconda.org/conda-forge/labelme). More details see in my code.
+-   In order to get more ideal result, I trained combination of original training datasets(2000 images) with small part of Wyoming's datasets(200 images) by using [labelme](https://anaconda.org/conda-forge/labelme).
 
 Prediction datasets are provided by Wyoming University.
 
--   The datasets used for predict can be accessed here: [Download]()
+-   The datasets used for predict can be accessed here:
+    -   [Balsamorhiza_incana](https://rmh.uwyo.edu/images/cardiff/Balsamorhiza_incana.zip)
+    -   [Balsamorhiza_sagittata](https://rmh.uwyo.edu/images/cardiff/Balsamorhiza_sagittata.zip)
+    -   [Geum_aleppicum](https://rmh.uwyo.edu/images/cardiff/Geum_aleppicum.zip)
+    -   [Geum_macrophyllum_var_perincisum](https://rmh.uwyo.edu/images/cardiff/Geum_macrophyllum_var_perincisum.zip)
+    -   [Mertensia_lanceolata](https://rmh.uwyo.edu/images/cardiff/Mertensia_lanceolata.zip)
+    -   [Mertensia_viridis](https://rmh.uwyo.edu/images/cardiff/Mertensia_viridis.zip)
+    -   [Oxytropis_besseyi_var_besseyi](https://rmh.uwyo.edu/images/cardiff/Oxytropis_besseyi_var_besseyi.zip)
+    -   [Oxytropis_lambertii_var_lambertii](https://rmh.uwyo.edu/images/cardiff/Oxytropis_lambertii_var_lambertii.zip)
+    -   [Packera_fendleri](https://rmh.uwyo.edu/images/cardiff/Packera_fendleri.zip)
+    -   [Packera_multilobata](https://rmh.uwyo.edu/images/cardiff/Packera_multilobata.zip)
 
-> **_If you like this project or it helps you in some way, don't forget to star._** :star:
-
-## Table of content:
+# Table of content:
 
 1. [NHM-semantic-segmentation](#nhm-semantic-segmentation)
 2. [Deeplabv3-Plus-pytorch](#deeplabv3-plus-pytorch)
-3. [YOLOv5-pytorch](#yolov5-pytorch)
-4. [Paper-work](#paper-work)
-5. [Reference](#reference)
-6. [Contact](#contanct)
+    - [installation](#installation)
+    - [get start](#get-start)
+    - [example result](#example-result)
+3. [U-Net-Pytorch](#u-net-pytorch)
+    - [installation](#installation-1)
+    - [get start](#get-start-1)
+    - [example result](#example-result-1)
+4. [PSPNet-Pytorch](#pspnet-pytorch)
+    - [installation](#installation-2)
+    - [get start](#get-start-2)
+    - [example result](#example-result-2)
+5. [YOLOv5-pytorch](#yolov5-pytorch)
+    - [installation](#installation-3)
+    - [get start](#get-start-3)
+    - [example result](#example-result-3)
 
 # NHM-semantic-segmentation
 
-## Example output
+Details @see https://github.com/NaturalHistoryMuseum/semantic-segmentation
 
-![example-result](./example_result/nhm-semantic-segmentation/slides_rbgkslides_example_result.png)
+Because the origin code is even not runnable :cold_sweat:, what I did:
+
+1. add `torch.backends.cudnn.benchmark = True` to first line of code :neutral_face:
+2. rewrite the `trainmodel.py` and `predict.py`, at least it can train microscope slides now, and can do segmentation on the trained model. But still cannot train herbarium sheets, and I don't want to go further because I have more readable code choice to reinvent :neutral_face:
+
+## Example result
+
+![nhm-example](./example_result/nhm-semantic-segmentation/slides_rbgkslides_example_result.png)
 
 # Deeplabv3-Plus-pytorch
 
-## Quick start using
+## Installation
 
-## Predicting images using existed model
+```
+<!-- Manual installation -->
+conda create -n deeplabv3plus python=3.9
 
-1. choose the mode of prediction in [predict.py](./deeplabv3-plus-pytorch/predict.py), default is `mode = "dir_predict"`, here I use directory predict as example.
-2. add images into `img` directory, either you can edit `dir_origin_path = "img/"` in [predict.py](./deeplabv3-plus-pytorch/predict.py) into anywhere you want.
-3. choose the model you want, default is `"model_path": 'logs/best_epoch_weights.pth',`. You can edit it any model you want in [deeplab.py](./deeplabv3-plus-pytorch/deeplab.py)
-4. run: `python predict.py`
-5. the result will be in `./img_out` directory
+conda install pytorch torchvision torchaudio cudatoolkit=11.6 -c pytorch -c conda-forge
 
-> More details see [deeplabv3-plus-pytorch-README](./deeplabv3-plus-pytorch/README.md)
+pip install scipy==1.9.1
 
----
+pip install matplotlib==3.5.3
 
-## How to train your own model
+pip install opencv-python==4.6.0.66
 
-### If you only have origin images
+pip install tqdm==4.64.1
 
-1. put images into `./datasets/before` directory.
-   <br>In Anaconda3, `pip install labelme=3.16.7`.
-   <br>After installation, run `labelme`, and labelled you origin images and save \*.JSON with the same name as the images.
-   <br>**IMPORTANT:** The origin image should be **24 bit depth RGB** image end with **`*.jpg`**
-   <br>@see example here: [Example](./deeplabv3-plus-pytorch/datasets/before/)
-2. `python labelme_to_deeplab.py`
-   <br> The original JPG images are default to be saved in `"datasets/JPEGImages"`, and the labelled PNG images are default to be saved in `"datasets/SegmentationClass"`
-   <br>**Note:** You should modified the `classes = ["_background_", "Barcode", "Label", "Color chart", "Scale"]` in [labelme_to_deeplab.py](./deeplabv3-plus-pytorch/labelme_to_deeplab.py) into your own number of labelled classes. You can't remove the `"\_background\_"`
-3. Split the train/test/val datasets into deeplab's annotation. my default is `train/test/val = 80%/10%/10%`
-   <br>`python get_annotation.py`
-   <br>It will generate `ImageSets/Segmentation` in your dataset's root, with `test.txt`, `train.txt`, `trainval.txt`, `val.txt`
-   <br>**NOTE:** If you want to modify the train/test/val you can modify the codes in [get_annotation.py](./deeplabv3-plus-pytorch/get_annotation.py)
-4. `python train.py`
+pip install h5py==3.7.0
 
-> More details see [deeplabv3-plus-pytorch-README](./deeplabv3-plus-pytorch/README.md)
+pip install tensorboard==2.10.0
 
-### If you have both origin images and labelled images
+<!-- Auto installation -->
+conda create -n deeplabv3plus python=3.9
 
-1. Check the origin images are all **24 bit depth RGB** images end with **`*.jpg`**
-   <br>Check the labelled images are all **8 bit depth RGB** images end with **`*.png`** with the same name as the origin images.
-2. If your labelled PNG images can't meet the requirement, I provide [convert_lablled.py](./deeplabv3-plus-pytorch/convert_lablled.py) help you to either rename the images or change images from 24 bit depth into 8 bit depth.
-3. If everything is okay, you can follow the steps above, get annotations and start training.
+pip install -r requirements.txt
+```
 
----
+> :warning: IMPORTANT: if you want to use GPU mode, check you download related CUDA and CUDNN.
 
-## How to evaluate your trained model
+## Get start
 
-### If you already trained a model
+```python
+# train
+python train.py
 
-1. modified the parameters in [get_miou.py](./deeplabv3-plus-pytorch/get_miou.py)
-   <br> the parameters should be same as those before training.
-2. `python get_miou.py`
-3. The result will be in directory: `./miou_out`
+# predict
+python predict.py
 
-> More details see [deeplabv3-plus-pytorch-README](./deeplabv3-plus-pytorch/README.md)
+# get mIOU.png, mPA.png, mPrecision.png, mRecall.png, confusion_matrix.csv, detection-results
+python get_miou.py
 
-## Example output
+# labelme JSON to deeplab PNG
+python labelme_to_deeplab.py
 
-![example-result](./example_result/deeplabv3-plus/RM0008192_example_result.jpg)
+# convert 24-bit depth PNG to 8-bit depth PNG
+python convert_labelled.py
+
+# generate train-test-val TXT
+python get_annotation.py
+```
+
+> :rainbow: More details see [README](./deeplabv3-plus-pytorch/README.md) or [README.CN](./deeplabv3-plus-pytorch/README.CN.md)
+
+## Example result
+
+![deeplabv3plus-example](./example_result/deeplabv3-plus/RM0008156_example_result.jpg)
+
+# U-Net-Pytorch
+
+## Installation
+
+```
+<!-- Manual installation -->
+conda create -n unet python=3.9
+
+conda install pytorch torchvision torchaudio cudatoolkit=11.6 -c pytorch -c conda-forge
+
+pip install scipy==1.9.1
+
+pip install matplotlib==3.5.3
+
+pip install opencv-python==4.6.0.66
+
+pip install tqdm==4.64.1
+
+pip install h5py==3.7.0
+
+pip install tensorboard==2.10.0
+
+pip install onnx==1.12.0
+
+<!-- Auto installation -->
+conda create -n unet python=3.9
+
+pip install -r requirements.txt
+```
+
+## Get start
+
+```python
+# train
+python train.py
+
+# predict
+python predict.py
+
+# get mIOU.png, mPA.png, mPrecision.png, mRecall.png, confusion_matrix.csv, detection-results
+python get_miou.py
+
+# labelme JSON to unet PNG
+python labelme_to_unet.py
+
+# convert 24-bit depth PNG to 8-bit depth PNG
+python convert_labelled.py
+
+# generate train-test-val TXT
+python get_annotation.py
+```
+
+> :rainbow: More details see [README](./unet-pytorch/README.md) or [README.CN](./unet-pytorch/README.CN.md)
+
+## Example result
+
+![unet-example](./example_result/unet/RM0008156_example_result.jpg)
+
+# PSPNet-Pytorch
+
+## Installation
+
+```
+<!-- Manual installation -->
+conda create -n pspnet python=3.9
+
+conda install pytorch torchvision torchaudio cudatoolkit=11.6 -c pytorch -c conda-forge
+
+pip install scipy==1.9.1
+
+pip install matplotlib==3.5.3
+
+pip install opencv-python==4.6.0.66
+
+pip install tqdm==4.64.1
+
+pip install h5py==3.7.0
+
+pip install tensorboard==2.10.0
+
+pip install onnx==1.12.0
+
+<!-- Auto installation -->
+conda create -n pspnet python=3.9
+
+pip install -r requirements.txt
+```
+
+## Get start
+
+```python
+# train
+python train.py
+
+# predict
+python predict.py
+
+# get mIOU.png, mPA.png, mPrecision.png, mRecall.png, confusion_matrix.csv, detection-results
+python get_miou.py
+
+# labelme JSON to pspnet PNG
+python labelme_to_pspnet.py
+
+# convert 24-bit depth PNG to 8-bit depth PNG
+python convert_labelled.py
+
+# generate train-test-val TXT
+python get_annotation.py
+```
+
+> :rainbow: More details see [README](./pspnet-pytorch/README.md) or [README.CN](./pspnet-pytorch/README.CN.md)
+
+## Example result
+
+![pspnet-example](./example_result/pspnet/RM0008180_example_result.jpg)
 
 # YOLOv5-pytorch
 
-## Example output
+> :warning: IMPORTANT: This project is still in TODO mode<br>
+> :warning: IMPORTANT: This project is still in TODO mode<br>
+> :warning: IMPORTANT: This project is still in TODO mode<br>
+> 重要的事情说三遍 Important things said three times
 
-![example-result](./example_result/yolov5/RM0090530_example_result.jpg)
+## Installation
 
-# Paper work
+```
+<!-- Manual installation -->
+conda create -n yolov5 python=3.9
 
-More detail about my project, you can see in my dissertation: [dissertation]()
+conda install pytorch torchvision torchaudio cudatoolkit=11.6 -c pytorch -c conda-forge
+
+pip install scipy==1.9.1
+
+pip install matplotlib==3.5.3
+
+pip install opencv-python==4.6.0.66
+
+pip install tqdm==4.64.1
+
+pip install h5py==3.7.0
+
+pip install tensorboard==2.10.0
+
+pip install onnx==1.12.0
+
+<!-- Auto installation -->
+conda create -n yolov5 python=3.9
+
+pip install -r requirements.txt
+```
+
+## Get start
+
+```python
+# train
+python train.py
+
+# predict
+python predict.py
+
+# get detection-results, ground-truth, images-optional, results
+python get_map.py
+
+# generate train-test-val TXT
+python voc_annotation.py
+```
+
+> :rainbow: More details see [README](./yolov5-pytorch/README.md) or [README.CN](./yolov5-pytorch/README.CN.md)
+
+## Example result
+
+![yolov5-example-1](./example_result/yolov5/RM0090530_example_result.jpg)
+
+![yolov5-example-2](./example_result/yolov5/RM0008156_example_result.png)
 
 # Reference
 
-## NHM-semantic-segmentation
+https://github.com/NaturalHistoryMuseum/semantic-segmentation
 
-<ol>This project is modified from <li>origin repo: [semantic-segmentation](https://github.com/NaturalHistoryMuseum/semantic-segmentation)</li>
-Fixed the bugs:
+https://github.com/ultralytics/yolov5
 
-```
-TypeError: Descriptors cannot not be created directly.
+https://github.com/tensorflow/models
 
-Solve:
-PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
-pip install protobuf==3.20.*
-```
+https://github.com/ggyyzm/pytorch_segmentation
 
-```
-The system cannot find the file specified.
-; No such file or directory
+https://github.com/bonlime/keras-deeplab-v3-plus
 
-Solve:
-set PYTHONPATH=${PYTHONPATH:`pwd`:`pwd`/slim}
-```
+https://github.com/matterport/Mask_RCNN
 
-```
-counts = np.bincount(f['labels'][()].flatten(), minlength=len(self.class_to_idx))
-MemoryError
+https://github.com/leekunhee/Mask_RCNN
 
-Solve: resize the original images by using scripts: resize.py
-```
+https://github.com/anylots/detection
 
-```
-RuntimeError: cuDNN error: CUDNN_STATUS_EXECUTION_FAILED
+https://github.com/yyccR/yolov5_in_tf2_keras
 
-Solve: add this line ahead runing code
-torch.backends.cudnn.benchmark = True
-```
+https://github.com/wkentaro/labelme/
 
-```
-ValueError: empty range for randrange() (0,-2, -2)
-```
+https://github.com/xiaotudui/PyTorch-Tutorial
 
-</ol>
+https://github.com/bubbliiiing/deeplabv3-plus-pytorch
 
----
+https://github.com/bubbliiiing/pspnet-pytorch
 
-## Deeplabv3-Plus-pytorch
+https://github.com/bubbliiiing/unet-pytorch
 
-<ol>This project is inspired by and modified from: 
-<li>https://github.com/tensorflow/models/tree/master/research/deeplab</li>
-<li>https://github.com/VainF/DeepLabV3Plus-Pytorch</li>
-<li>https://github.com/bubbliiiing/deeplabv3-plus-pytorch</li>
-</ol>
-
-## YOLOv5-pytorch
-
-# Contanct
-
-Github: https://github.com/lyzsk
-
-Email: sichu.huang@outlook.com
+> 跪了，感谢大佬们上传代码给我抄，要不然真的交不了作业了 :tired_face::tired_face::tired_face:
 
 # LICENSE
 
 [LICENSE](./LICENSE)
+
+---
+
+> TODO: built with Flask output API into React + Springboot + SpringMVC + MybatisPlus + Redis + RabbitMQ + MongoDB + MySQL + Elasticsearch + Druid + FastDFS + Kubernetes + Docker+++++++++++++++++++++++ 淦 救救孩子吧
