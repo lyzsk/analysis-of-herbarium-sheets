@@ -55,12 +55,13 @@ if __name__ == "__main__":
 
     # mobilenet, xception
     backbone = "mobilenet"
+    # backbone = ""
     # pretrained        是否使用主干网络的预训练权重，此处使用的是主干的权重，因此是在模型构建的时候进行加载的。
     #                   如果设置了model_path，则主干的权值无需加载，pretrained的值无意义。
     #                   如果不设置model_path，pretrained = True，此时仅加载主干开始训练。
     #                   如果不设置model_path，pretrained = False，Freeze_Train = Fasle，此时从0开始训练，且没有冻结主干的过程。
     pretrained = False
-
+    # pretrained = True
     # pretrained weights of the model are common to different datasets because the features are common
     # thbackbone's pre-train weight is used for feature extraction during training
     #
