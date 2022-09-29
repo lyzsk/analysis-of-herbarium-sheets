@@ -6,24 +6,24 @@ import numpy as np
 
 from utils.utils import get_classes
 
-#   annotation_mode用于指定该文件运行时计算的内容
-#   annotation_mode为0代表整个标签处理过程，包括获得VOCdevkit/VOC2007/ImageSets里面的txt以及训练用的2007_train.txt、2007_val.txt
-#   annotation_mode为1代表获得VOCdevkit/VOC2007/ImageSets里面的txt
-#   annotation_mode为2代表获得训练用的2007_train.txt、2007_val.txt
+# annotation_mode用于指定该文件运行时计算的内容
+# annotation_mode = 0:  代表整个标签处理过程，包括获得VOCdevkit/VOC2007/ImageSets里面的txt以及训练用的2007_train.txt、2007_val.txt
+# annotation_mode = 1:  代表获得VOCdevkit/VOC2007/ImageSets里面的txt
+# annotation_mode=2:    代表获得训练用的2007_train.txt、2007_val.txt
 annotation_mode = 0
-#   必须要修改，用于生成2007_train.txt、2007_val.txt的目标信息
-#   与训练和预测所用的classes_path一致即可
-#   如果生成的2007_train.txt里面没有目标信息
-#   那么就是因为classes没有设定正确
-#   仅在annotation_mode为0和2的时候有效
+# 必须要修改，用于生成2007_train.txt、2007_val.txt的目标信息
+# 与训练和预测所用的classes_path一致即可
+# 如果生成的2007_train.txt里面没有目标信息
+# 那么就是因为classes没有设定正确
+# 仅在annotation_mode为0和2的时候有效
 classes_path = 'model_data/herbarium_classes.txt'
-#   trainval_percent用于指定(训练集+验证集)与测试集的比例，默认情况下 (训练集+验证集):测试集 = 9:1
-#   train_percent用于指定(训练集+验证集)中训练集与验证集的比例，默认情况下 训练集:验证集 = 9:1
-#   仅在annotation_mode为0和1的时候有效
+# modify trainval_percent to add test set
+# train_percent:    train:val = 9:1
+# 仅在annotation_mode为0和1的时候有效
 trainval_percent = 0.9
 train_percent = 0.9
-#   指向VOC数据集所在的文件夹
-#   默认指向根目录下的VOC数据集
+
+# root dir for images datasets
 VOCdevkit_path = 'VOCdevkit'
 
 VOCdevkit_sets = [('2007', 'train'), ('2007', 'val')]

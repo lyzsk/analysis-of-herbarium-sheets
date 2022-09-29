@@ -315,20 +315,23 @@ class YOLO(object):
     def get_map_txt(self, image_id, image, class_names, map_out_path):
         f = open(os.path.join(map_out_path, "detection-results/" + image_id + ".txt"), "w", encoding='utf-8')
         image_shape = np.array(np.shape(image)[0:2])
-        # 在这里将图像转换成RGB图像，防止灰度图在预测时报错。
-        # 代码仅仅支持RGB图像的预测，所有其它类型的图像都会转化成RGB
+        # convert into RGB png, because:
+        #   1. only png has the classes of each pixel.
+        #   2. we use RGB color the assign labels.
         image = cvtColor(image)
-        # 给图像增加灰条，实现不失真的resize
+        # add gray bars to the image to achieve undistorted resize (letterbox image)
         # 也可以直接resize进行识别
         image_data = resize_image(image, (self.input_shape[1], self.input_shape[0]), self.letterbox_image)
-        # 添加上batch_size维度
+        # 添加上batch_size维度, put the channel at the first dimension
+        # This is the Pytorch requirement
         image_data = np.expand_dims(np.transpose(preprocess_input(np.array(image_data, dtype='float32')), (2, 0, 1)), 0)
 
+        # transfer the image_data into the Pytorch format
         with torch.no_grad():
             images = torch.from_numpy(image_data)
             if self.cuda:
                 images = images.cuda()
-            # 将图像输入网络当中进行预测！
+            # put images into nets to predict
             outputs = self.net(images)
             outputs = self.bbox_util.decode_box(outputs)
             # 将预测框进行堆叠，然后进行非极大抑制

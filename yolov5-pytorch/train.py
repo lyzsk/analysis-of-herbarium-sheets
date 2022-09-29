@@ -25,10 +25,10 @@ if __name__ == "__main__":
 
     sync_bn = False
 
-    #   fp16        是否使用混合精度训练
-    #               可减少约一半的显存、需要pytorch1.7.1以上
-
-    fp16 = False
+    # fp16              Mixed Precision Training    混合精度训练, 减少内存, tf可以直接开, pytorch要1.7.1以上
+    #                   Can reduce about half of the video memory, requires pytorch1.7.1 or above
+    #                   In addition, could reduce 1hr training time on 1000 images datasets
+    fp16 = True
 
     classes_path = 'model_data/herbarium_classes.txt'
 
@@ -38,9 +38,9 @@ if __name__ == "__main__":
     model_path = 'model_data/yolov5_s.pth'
     # model_path = "logs/ep050-loss0.155-val_loss0.106.pth"
 
-    # 32的倍数 416,416  640, 640
+    # 32的倍数 multiples of 32: 416,416  640, 640
     input_shape = [416, 416]
-    #   backbone        cspdarknet（默认）
+    #   backbone        cspdarknet (default)
     #                   convnext_tiny
     #                   convnext_small
     #                   swin_transfomer_tiny
@@ -48,8 +48,8 @@ if __name__ == "__main__":
 
     pretrained = False
     # pretrained = True
-    #   phi             所使用的YoloV5的版本。s、m、l、x
-    #                   在除cspdarknet的其它主干中仅影响panet的大小
+    # phi             The version of YOLOv5: s, m, l, x
+    #                 在除cspdarknet的其它主干中仅影响panet的大小
     phi = 's'
 
     mosaic = True
@@ -58,40 +58,64 @@ if __name__ == "__main__":
     mixup_prob = 0.5
     special_aug_ratio = 0.7
 
-    #   label_smoothing     标签平滑。一般0.01以下。如0.01、0.005。
+    # label_smoothing     标签平滑, < 0.01. for example: 0.01, 0.005.
     label_smoothing = 0
 
+    # train has two steps: freeze, unfreeze
+    # freeze step to meet the training needs of insufficient machine performance
+    # freeze need smaller memory of GPU
+    # UnFreeze_Epoch        sum of training epoch (freeze + unfreeze)
+    #                       1. SGD need more time to converge，
+    #                           need larger UnFreeze_Epoch
+    #                       2. Adam can use relatively smaller UnFreeze_Epoch
+    # Unfreeze_batch_size     模型在解冻后的batch_size
+    # Freeze_Train          Enable/Disable freeze training  是否开启冻结训练
     Init_Epoch = 0
     Freeze_Epoch = 50
     Freeze_batch_size = 16
-    #   解冻阶段训练参数
-    #   此时模型的主干不被冻结了，特征提取网络会发生改变
-    #   占用的显存较大，网络所有的参数都会发生改变
-    #   UnFreeze_Epoch          模型总共训练的epoch
-    #                           SGD需要更长的时间收敛，因此设置较大的UnFreeze_Epoch
-    #                           Adam可以使用相对较小的UnFreeze_Epoch
-    #   Unfreeze_batch_size     模型在解冻后的batch_size
     UnFreeze_Epoch = 300
     Unfreeze_batch_size = 8
-
     Freeze_Train = True
 
+    # Init_lr           maximum learning rate, sgd default learning rate is 0.01
+    #                   You can change it to what you want
+    # Min_lr            min learning rate
+    # IMPORTANT! need to modify here, I don't have time to find best Init_lr
     Init_lr = 1e-2
     Min_lr = Init_lr * 0.01
 
-    optimizer_type = "sgd"
+    # optimizer_type    adam, sgd   其实adam比sgd好
+    # momentum          优化器内部使用到的momentum参数
+    #                   'The power value used in the poly learning policy.'
+    # weight_decay      weight decay to prevent overfitting
+    # "adam" is better maybe, I don't have time to test
+    # if using "adam", weight_decay = 0, because using adam will have weight_decay bug
+    # IMPORTANT! need to modify here, I don't have enough time to adjust "momentum" and "weight_decay"
+    optimizer_type = "adam"
     momentum = 0.937
-    weight_decay = 5e-4
+    # weight_decay = 5e-4
+    weight_decay = 0
 
+    # lr_decay_type    'step', 'cos'
+    # cos: Cosine learning rate decay   随着epoch增大学习率不断减去一个小的数
+    #                                   学习过程更加平滑
+    # step: Step learning rate decay    让学习率随着训练过程曲线下降
+    # @see https://blog.csdn.net/m0_46204224/article/details/109745740
     lr_decay_type = "cos"
 
+    # save log every 10 epoch
     save_period = 10
-
     save_dir = 'logs'
 
+    # eval_flag         evaluate during training, evaluate the val dataset
+    # eval_period       evaluation takes a lot of time, and frequent evaluation will lead to very slow training
+    #                   so use eval_period = save_period for me, you can also adjust it.
     eval_flag = True
     eval_period = 10
 
+    # num_workers       multithread reading data
+    #                   1: close multithread (recommend for bad GPU heat dissipation capacity and small memory)
+    #                   4: is better, however, I have no memory. If you have 16GB memory maybe use "num_workers = 2"
     num_workers = 1
 
     train_annotation_path = '2007_train.txt'
@@ -111,7 +135,7 @@ if __name__ == "__main__":
         local_rank = 0
         rank = 0
 
-    #   获取classes和anchor
+    # 获取classes和anchor
     class_names, num_classes = get_classes(classes_path)
     anchors, num_anchors = get_anchors(anchors_path)
 
@@ -123,7 +147,7 @@ if __name__ == "__main__":
         else:
             download_weights(backbone, phi)
 
-    #   创建yolo模型
+    # 创建yolo模型
     model = YoloBody(anchors_mask, num_classes, phi, backbone, pretrained=pretrained, input_shape=input_shape)
     if not pretrained:
         weights_init(model)
@@ -148,9 +172,9 @@ if __name__ == "__main__":
             print("\nFail To Load Key:", str(no_load_key)[:500], "……\nFail To Load Key num:", len(no_load_key))
             print("\n\033[1;33;44m温馨提示，head部分没有载入是正常现象，Backbone部分没有载入是错误的。\033[0m")
 
-    #   获得损失函数
+    # get loss function
     yolo_loss = YOLOLoss(anchors, num_classes, input_shape, Cuda, anchors_mask, label_smoothing)
-    #   记录Loss
+    # 记录Loss
     if local_rank == 0:
         time_str = datetime.datetime.strftime(datetime.datetime.now(), '%Y_%m_%d_%H_%M_%S')
         log_dir = os.path.join(save_dir, "loss_" + str(time_str))
@@ -158,8 +182,7 @@ if __name__ == "__main__":
     else:
         loss_history = None
 
-    #   torch 1.2不支持amp，建议使用torch 1.7.1及以上正确使用fp16
-    #   因此torch1.2这里显示"could not be resolve"
+    # torch 1.2 has no amp, torch > 1.7.1 can use fp16
     if fp16:
         from torch.cuda.amp import GradScaler as GradScaler
 
@@ -168,7 +191,7 @@ if __name__ == "__main__":
         scaler = None
 
     model_train = model.train()
-    #   多卡同步Bn
+    # 多卡同步Bn
     if sync_bn and ngpus_per_node > 1 and distributed:
         model_train = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model_train)
     elif sync_bn:
@@ -176,7 +199,7 @@ if __name__ == "__main__":
 
     if Cuda:
         if distributed:
-            #   多卡平行运行
+            # multi GPU training
             model_train = model_train.cuda(local_rank)
             model_train = torch.nn.parallel.DistributedDataParallel(model_train, device_ids=[local_rank],
                                                                     find_unused_parameters=True)
@@ -185,10 +208,10 @@ if __name__ == "__main__":
             cudnn.benchmark = True
             model_train = model_train.cuda()
 
-    #   权值平滑
+    # 权值平滑
     ema = ModelEMA(model_train)
 
-    #   读取数据集对应的txt
+    # 读取数据集对应的txt
     with open(train_annotation_path, encoding='utf-8') as f:
         train_lines = f.readlines()
     with open(val_annotation_path, encoding='utf-8') as f:
@@ -206,10 +229,7 @@ if __name__ == "__main__":
             lr_decay_type=lr_decay_type, \
             save_period=save_period, save_dir=save_dir, num_workers=num_workers, num_train=num_train, num_val=num_val
         )
-        #   总训练世代指的是遍历全部数据的总次数
-        #   总训练步长指的是梯度下降的总次数 
-        #   每个训练世代包含若干训练步长，每个训练步长进行一次梯度下降。
-        #   此处仅建议最低训练世代，上不封顶，计算时只考虑了解冻部分
+        # total_step: count of all gradient descents
         wanted_step = 5e4 if optimizer_type == "sgd" else 1.5e4
         total_step = num_train // Unfreeze_batch_size * UnFreeze_Epoch
         if total_step <= wanted_step:
@@ -222,30 +242,30 @@ if __name__ == "__main__":
             print("\033[1;33;44m[Warning] 由于总训练步长为%d，小于建议总步长%d，建议设置总世代为%d。\033[0m" % (
                 total_step, wanted_step, wanted_epoch))
 
-    #   主干特征提取网络特征通用，冻结训练可以加快训练速度
-    #   也可以在训练初期防止权值被破坏。
-    #   Init_Epoch为起始世代
-    #   Freeze_Epoch为冻结训练的世代
-    #   UnFreeze_Epoch总训练世代
-    #   提示OOM或者显存不足请调小Batch_size
+    # 主干特征提取网络特征通用，冻结训练可以加快训练速度
+    # 也可以在训练初期防止权值被破坏。
+    # Init_Epoch为起始世代
+    # Interval_Epoch为冻结训练的世代
+    # Epoch总训练世代
+    # OOM need to reduce Batch_size
     if True:
         UnFreeze_flag = False
-        #   冻结一定部分训练
+        # 冻结一定部分训练
         if Freeze_Train:
             for param in model.backbone.parameters():
                 param.requires_grad = False
 
-        #   如果不冻结训练的话，直接设置batch_size为Unfreeze_batch_size
+        # 如果不冻结训练的话，直接设置batch_size为Unfreeze_batch_size
         batch_size = Freeze_batch_size if Freeze_Train else Unfreeze_batch_size
 
-        #   判断当前batch_size，自适应调整学习率
+        # 判断当前batch_size，adaptively adjust the learning rate 自适应调整学习率
         nbs = 64
         lr_limit_max = 1e-3 if optimizer_type == 'adam' else 5e-2
         lr_limit_min = 3e-4 if optimizer_type == 'adam' else 5e-4
         Init_lr_fit = min(max(batch_size / nbs * Init_lr, lr_limit_min), lr_limit_max)
         Min_lr_fit = min(max(batch_size / nbs * Min_lr, lr_limit_min * 1e-2), lr_limit_max * 1e-2)
 
-        #   根据optimizer_type选择优化器
+        # set optimizer
         pg0, pg1, pg2 = [], [], []
         for k, v in model.named_modules():
             if hasattr(v, "bias") and isinstance(v.bias, nn.Parameter):
@@ -261,10 +281,11 @@ if __name__ == "__main__":
         optimizer.add_param_group({"params": pg1, "weight_decay": weight_decay})
         optimizer.add_param_group({"params": pg2})
 
-        #   获得学习率下降的公式
+        # get the formula for the learning rate drop
+        # 获得学习率下降的公式
         lr_scheduler_func = get_lr_scheduler(lr_decay_type, Init_lr_fit, Min_lr_fit, UnFreeze_Epoch)
 
-        #   判断每一个世代的长度
+        # 判断每一个世代的长度
         epoch_step = num_train // batch_size
         epoch_step_val = num_val // batch_size
 
@@ -274,7 +295,7 @@ if __name__ == "__main__":
         if ema:
             ema.updates = epoch_step * Init_Epoch
 
-        #   构建数据集加载器
+        # 构建数据集加载器
         train_dataset = YoloDataset(train_lines, input_shape, num_classes, anchors, anchors_mask,
                                     epoch_length=UnFreeze_Epoch, \
                                     mosaic=mosaic, mixup=mixup, mosaic_prob=mosaic_prob, mixup_prob=mixup_prob,
@@ -301,7 +322,8 @@ if __name__ == "__main__":
                              pin_memory=True,
                              drop_last=True, collate_fn=yolo_dataset_collate, sampler=val_sampler)
 
-        #   记录eval的map曲线
+        # record eval map curve
+        # 记录eval的map曲线
         if local_rank == 0:
             eval_callback = EvalCallback(model, input_shape, anchors, anchors_mask, class_names, num_classes, val_lines,
                                          log_dir, Cuda, \
@@ -309,20 +331,19 @@ if __name__ == "__main__":
         else:
             eval_callback = None
 
-        #   开始模型训练
+        # start training model
         for epoch in range(Init_Epoch, UnFreeze_Epoch):
-            #   如果模型有冻结学习部分
-            #   则解冻，并设置参数
+            # 如果模型有冻结学习部分,则解冻,并设置参数
             if epoch >= Freeze_Epoch and not UnFreeze_flag and Freeze_Train:
                 batch_size = Unfreeze_batch_size
 
-                #   判断当前batch_size，自适应调整学习率
+                # 判断当前batch_size，自适应调整学习率
                 nbs = 64
                 lr_limit_max = 1e-3 if optimizer_type == 'adam' else 5e-2
                 lr_limit_min = 3e-4 if optimizer_type == 'adam' else 5e-4
                 Init_lr_fit = min(max(batch_size / nbs * Init_lr, lr_limit_min), lr_limit_max)
                 Min_lr_fit = min(max(batch_size / nbs * Min_lr, lr_limit_min * 1e-2), lr_limit_max * 1e-2)
-                #   获得学习率下降的公式
+                # 获得学习率下降的公式
                 lr_scheduler_func = get_lr_scheduler(lr_decay_type, Init_lr_fit, Min_lr_fit, UnFreeze_Epoch)
 
                 for param in model.backbone.parameters():
